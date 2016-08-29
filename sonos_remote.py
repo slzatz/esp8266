@@ -1,11 +1,23 @@
 '''
-This micropython script is for use with the hacked FeatherWing doubler.  It displays songs that
-are being scrobbled to the mqtt broker running in AWS EC2 or locally and also the top bottom (A)
-increases the volume, the bottom button (C) decreases the volume and middle (B) play_pauses
-The separate button on GPIO 14 also play_pauses.
+This uses the homemade Feather Wing doubler: one of the top boards is the
+Feather Wing SSD1306 OLED and the other is a homemade board that has a
+play/pause button and a potentiometer.
+This micropython script displays songs that are being scrobbled to the mqtt broker
+running in AWS EC2 or locally (most recently locally)
 On Huzzah ESP8266 Feather, buttons A, B & C connect to 0, 16, 2 respectively
+The buttons on OLED are also used:
+    - Button A (GPIO 0): play wnyc since that is such a frequent thing that I want to do
+    - Button B (GPIO 16): some boards this is redirected to another pin because 16 is not a normal
+      pin but might work (needs a physical pull-up since there isn't a builtin pullup)
+    - Button C (GPIO 2): plays any songs in the queue
+Note that this script sends mqtt messages and a script on the raspberry pi named esp_check_mqtt.py,
+which looks for the messages and then issues sonos commands
+
+There is a separate button that is connected to GPIO 14 that is on the board that has the
+volume potentiometer and that button play_pauses.
+
+On some setups, I have rewired GPIO 16 on the OLED to GPIO 13, which is a normal pin
 The script also pings the broker to keep it alive
-One board is the FeatherWing SSD1306 OLED and the other has a play/pause button and potentiometer
 '''
 
 import gc
@@ -42,39 +54,41 @@ c = umc(mqtt_id, host, 1883)
 b = bytearray(1)
 # mtpPublish is a class method that produces a bytes object that is used in
 # the callback where we can't allocate any memory on the heap
-wnyc = umc.mtpPublish('sonos/'+loc, '{"action":"wnyc"}')
-louder = umc.mtpPublish('sonos/'+loc, '{"action":"louder"}')
-play_pause = umc.mtpPublish('sonos/'+loc, '{"action":"play_pause"}')
+play_wnyc_msg = umc.mtpPublish('sonos/'+loc, '{"action":"play_wnyc"}')
+play_queue_msg = umc.mtpPublish('sonos/'+loc, '{"action":"play_queue"}')
+play_pause_msg = umc.mtpPublish('sonos/'+loc, '{"action":"play_pause"}')
 
-def callback_louder(p):
+#callbacks
+# note that b[0] is set to 0 in the while loop
+def play_wnyc(p):
   if b[0]:
     print("debounced", p, b[0])
     return
-  b[0] = c.sock.send(louder)
+  b[0] = c.sock.send(play_wnyc_msg)
   print("change pin", p, b[0])
- 
-def callback_wnyc(p):
+
+def play_queue(p):
   if b[0]:
     print("debounced", p, b[0])
     return
-  b[0] = c.sock.send(wnyc)
+  b[0] = c.sock.send(play_queue_msg)
   print("change pin", p, b[0])
 
-def callback_play_pause(p):
+def play_pause(p):
   if b[0]:
     print("debounced", p, b[0])
     return
-  b[0] = c.sock.send(play_pause)
+  b[0] = c.sock.send(play_pause_msg)
   print("change pin", p, b[0])
 
-p0 = Pin(0, Pin.IN, Pin.PULL_UP)
-p2 = Pin(2, Pin.IN, Pin.PULL_UP)
-p13 = Pin(13, Pin.IN, Pin.PULL_UP)
-p14 = Pin(14, Pin.IN, Pin.PULL_UP)
-p0.irq(trigger=Pin.IRQ_RISING, handler=callback_wnyc)
-p2.irq(trigger=Pin.IRQ_RISING, handler=callback_louder) #this should be changed to random songs
-p13.irq(trigger=Pin.IRQ_RISING, handler=callback_play_pause)
-p14.irq(trigger=Pin.IRQ_FALLING, handler=callback_play_pause)
+p0 = Pin(0, Pin.IN, Pin.PULL_UP) #button A on FeatherWing OLED
+p2 = Pin(2, Pin.IN, Pin.PULL_UP)  #button C on FeatherWing OLED
+p13 = Pin(13, Pin.IN, Pin.PULL_UP) #some boards redirected pin 16 to pin 13 on FeatherWing OLED
+p14 = Pin(14, Pin.IN, Pin.PULL_UP) #button on homemade volume play/pause board
+p0.irq(trigger=Pin.IRQ_RISING, handler=play_wnyc) 
+p2.irq(trigger=Pin.IRQ_RISING, handler=play_queue)
+p13.irq(trigger=Pin.IRQ_RISING, handler=play_pause)
+p14.irq(trigger=Pin.IRQ_FALLING, handler=play_pause)
 
 adc = ADC(0)
 
