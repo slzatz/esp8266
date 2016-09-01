@@ -128,7 +128,7 @@ def run():
 
   while 1:
     new_level = adc.read()
-    if abs(new_level-level) > 20:
+    if abs(new_level-level) > 10:
       try:
         c.publish('sonos/'+loc, json.dumps({"action":"volume", "level":new_level}))
       except Exception as e:
@@ -136,13 +136,13 @@ def run():
         c.sock.close()
         c.connect()
       level = new_level
-      print(level)
+      print("new level =", level)
 
     z = c.check_msg()
     if z:
       print(z)
       if isinstance(z, int):
-        print("returned a integer")
+        print("returned an integer")
         d.draw_text(123, 24, ' ')
         if bb:
           d.draw_text(123, 24, '|') 
