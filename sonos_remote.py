@@ -127,7 +127,7 @@ def run():
   level = 300
 
   while 1:
-    new_level = adc.read()
+    new_level = 1000-adc.read() # since current wiring has clockwise decreasing voltage
     if abs(new_level-level) > 10:
       try:
         c.publish('sonos/'+loc, json.dumps({"action":"volume", "level":new_level}))
