@@ -174,4 +174,4 @@ def run():
     b[0] = 0 # for debouncing
     sleep(1)
 
-run()
+#run()
