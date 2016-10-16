@@ -5,12 +5,13 @@ The mqtt topic is "neo" and the server is located on my aws ec2 instance
 '''
 
 from machine import Pin, Timer
+import network
 import math
 import neopixel
 import time
 from micropython import const
 from umqtt_client import MQTTClient
-from config import hosts 
+from config import hosts, ssid, pw 
 
 PIXEL_WIDTH = const(8)
 PIXEL_HEIGHT = const(8)
@@ -25,7 +26,14 @@ tim = Timer(-1)
 
 def callback(t):
   global MAX_BRIGHT
-  b = umc.check_msg()
+
+  try:
+      b = umc.check_msg()
+  except OSError as e:
+      print("check_msg:",e)
+      connect()
+      b = None
+
   print("b =",b)
   if b:
     np.fill((0,0,0))
@@ -37,19 +45,31 @@ def callback(t):
     except ValueError as e:
       print("Value couldn't be converted to float")
 
-    time.sleep(2)
+  time.sleep(2)
 
 tim.init(period=10000, mode=Timer.PERIODIC, callback=callback)
 np = neopixel.NeoPixel(Pin(13, Pin.OUT), PIXEL_WIDTH*PIXEL_HEIGHT)
 
 umc = MQTTClient(mqtt_id, host, 1883)
 
-umc.connect()
-umc.subscribe('neo')
+def connect():
+  wlan = network.WLAN(network.STA_IF)
+  wlan.active(True)
+  if not wlan.isconnected():
+    print('connecting to network...')
+    wlan.connect(ssid, pw)
+    while not wlan.isconnected():
+      pass
+  print('network config:', wlan.ifconfig())     
+
+  umc.connect()
+  umc.subscribe('neo')
 
 # Clear all the pixels and turn them off.
-np.fill((0,0,0))
-np.write()
+#np.fill((0,0,0))
+#np.write()
+
+connect()
 
 while True:
   np.fill((0,0,0))
