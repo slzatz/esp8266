@@ -2,20 +2,24 @@
 Tony DiCola's video and references are at https://www.youtube.com/watch?v=QcyuYvyvOEI
 The formulas are at http://www.bidouille.org/prog/plasma
 The mqtt topic is "neo" and the server is located on my aws ec2 instance
+Right now the program is expecting an MQTT message of the form:
+{"brightness":2.0, "rgb":1, "factor":2.0}
+Still working on how best to handle a WiFi hiccough -- right now trying to reboot
 '''
 
-from machine import Pin, Timer
+from machine import Pin, Timer, reset
 import network
+import json
 import math
 import neopixel
 import time
-from micropython import const
+#from micropython import const
 from umqtt_client import MQTTClient
-from config import hosts, ssid, pw 
+from config import hosts, ssid, pw, pixel_width, pixel_height 
 
-PIXEL_WIDTH = const(8)
-PIXEL_HEIGHT = const(8)
-MAX_BRIGHT = 20.0
+PIXEL_WIDTH = pixel_width #const(8)
+PIXEL_HEIGHT = pixel_height #const(8)
+MAX_BRIGHT = 2.0
 FACTOR_ONE = 1.0 
 host = hosts['other']
 
@@ -24,15 +28,43 @@ with open('mqtt_id', 'r') as f:
 
 tim = Timer(-1)
 
+def rgb1(v):
+  r = 1 + math.cos(v*math.pi)
+  g = 0
+  b = 1 + math.sin(v*math.pi)
+  return (int(MAX_BRIGHT*r),int(MAX_BRIGHT*g),int(MAX_BRIGHT*b))
+
+def rgb2(v):
+  r = 1 + math.sin(v*math.pi)
+  g = 1 + math.cos(v*math.pi)
+  b = 0
+  return (int(MAX_BRIGHT*r),int(MAX_BRIGHT*g),int(MAX_BRIGHT*b))
+
+def rgb3(v):
+  r = 0
+  g = 1 + math.cos(v*math.pi)
+  b = 1 + math.sin(v*math.pi)
+  return (int(MAX_BRIGHT*r),int(MAX_BRIGHT*g),int(MAX_BRIGHT*b))
+
+RGB_OPTIONS = {1:rgb1, 2:rgb2, 3:rgb3}
+RGB = rgb2
+
 def callback(t):
-  global MAX_BRIGHT
+  global MAX_BRIGHT ###########################
+  global RGB
+  global FACTOR_ONE
+  #global umc
 
   try:
-      b = umc.check_msg()
+    b = umc.check_msg()
   except OSError as e:
-      print("check_msg:",e)
-      connect()
-      b = None
+    print("check_msg:",e)
+    #umc.sock.close()
+    #umc = MQTTClient(mqtt_id, host, 1883)
+    #time.sleep(2)
+    #connect()
+    #b = None
+    reset()
 
   print("b =",b)
   if b:
@@ -41,17 +73,26 @@ def callback(t):
     np.write()
 
     try:
-      MAX_BRIGHT = float(b[1].decode('ascii'))
-    except ValueError as e:
-      print("Value couldn't be converted to float")
+      #MAX_BRIGHT = float(b[1].decode('ascii')) #######################################
+      #RGB = rgb1 if int(b[1]) < 2 else rgb2
+      #RGB = RGB_OPTIONS.get(int(b[1]), rgb1)
+      zz = json.loads(b[1].decode('utf-8'))
+      option = zz.get('rgb', 0)
+      RGB = RGB_OPTIONS.get(option, rgb1)
+      MAX_BRIGHT = zz.get('brightness', MAX_BRIGHT)
+      FACTOR_ONE = zz.get('factor', FACTOR_ONE)
+    #except ValueError as e:
+    except Exception as e:
+      print(e)
 
-  time.sleep(2)
+  time.sleep(1)
 
 tim.init(period=10000, mode=Timer.PERIODIC, callback=callback)
 np = neopixel.NeoPixel(Pin(13, Pin.OUT), PIXEL_WIDTH*PIXEL_HEIGHT)
 
 umc = MQTTClient(mqtt_id, host, 1883)
 
+# connect does not have to be a function if it's not going to be called in error handler
 def connect():
   wlan = network.WLAN(network.STA_IF)
   wlan.active(True)
@@ -64,10 +105,6 @@ def connect():
 
   umc.connect()
   umc.subscribe('neo')
-
-# Clear all the pixels and turn them off.
-#np.fill((0,0,0))
-#np.write()
 
 connect()
 
@@ -96,6 +133,7 @@ while True:
 
       #print(r,g,b)
 
-      np[y*PIXEL_WIDTH+x] = (int(MAX_BRIGHT*r),int(MAX_BRIGHT*g),int(MAX_BRIGHT*b))
+      #np[y*PIXEL_WIDTH+x] = (int(MAX_BRIGHT*r),int(MAX_BRIGHT*g),int(MAX_BRIGHT*b)) ####################################
+      np[y*PIXEL_WIDTH+x] = RGB(v)
 
   np.write()
