@@ -63,32 +63,45 @@ def callback(t):
     #umc = MQTTClient(mqtt_id, host, 1883)
     #time.sleep(2)
     #connect()
-    #b = None
+    # note that when you reset it still gets to the lines below
+    # so need to set the value of b (although in the end it resets anyway)
+    b = None
     reset()
 
   print("b =",b)
-  if b:
-    np.fill((0,0,0))
-    np[0] = (100,0,0)
-    np.write()
 
-    try:
-      #MAX_BRIGHT = float(b[1].decode('ascii')) #######################################
-      #RGB = rgb1 if int(b[1]) < 2 else rgb2
-      #RGB = RGB_OPTIONS.get(int(b[1]), rgb1)
-      zz = json.loads(b[1].decode('utf-8'))
-      option = zz.get('rgb', 0)
-      RGB = RGB_OPTIONS.get(option, rgb1)
-      MAX_BRIGHT = zz.get('brightness', MAX_BRIGHT)
-      FACTOR_ONE = zz.get('factor', FACTOR_ONE)
-    #except ValueError as e:
-    except Exception as e:
-      print(e)
+  if b is None:
+    print("ping")
+    umc.ping()
+    time.sleep(1)
+    return
 
-  time.sleep(1)
+  elif isinstance(b, int):
+    time.sleep(1)
+    return
+
+  #if b:
+  np.fill((0,50,0))
+  np.write()
+
+  try:
+    #MAX_BRIGHT = float(b[1].decode('ascii')) #######################################
+    #RGB = rgb1 if int(b[1]) < 2 else rgb2
+    #RGB = RGB_OPTIONS.get(int(b[1]), rgb1)
+    zz = json.loads(b[1].decode('utf-8'))
+    option = zz.get('rgb', 0)
+    RGB = RGB_OPTIONS.get(option, rgb1)
+    MAX_BRIGHT = zz.get('brightness', MAX_BRIGHT)
+    FACTOR_ONE = zz.get('factor', FACTOR_ONE)
+  #except ValueError as e:
+  except Exception as e:
+    print(e)
 
 tim.init(period=10000, mode=Timer.PERIODIC, callback=callback)
+
 np = neopixel.NeoPixel(Pin(13, Pin.OUT), PIXEL_WIDTH*PIXEL_HEIGHT)
+np.fill((50,0,0))
+np.write()
 
 umc = MQTTClient(mqtt_id, host, 1883)
 
