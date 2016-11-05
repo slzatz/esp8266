@@ -5,6 +5,7 @@ The mqtt topic is "neo" and the server is located on my aws ec2 instance
 Right now the program is expecting an MQTT message of the form:
 {"brightness":2.0, "rgb":1, "factor":2.0}
 Still working on how best to handle a WiFi hiccough -- right now trying to reboot
+This version does not allocate memory in the timer callback
 '''
 
 from machine import Pin, Timer, reset
@@ -22,6 +23,8 @@ PIXEL_HEIGHT = pixel_height #const(8)
 MAX_BRIGHT = 2.0
 FACTOR_ONE = 1.0 
 host = hosts['other']
+
+flag = bytearray(1)
 
 with open('mqtt_id', 'r') as f:
     mqtt_id = f.read().strip()
@@ -50,19 +53,17 @@ RGB_OPTIONS = {1:rgb1, 2:rgb2, 3:rgb3}
 RGB = rgb2
 
 def callback(t):
-  global MAX_BRIGHT ###########################
+  flag[0] = 1
+
+def check_mqtt():
+  global MAX_BRIGHT 
   global RGB
   global FACTOR_ONE
-  #global umc
 
   try:
     b = umc.check_msg()
   except OSError as e:
     print("check_msg:",e)
-    #umc.sock.close()
-    #umc = MQTTClient(mqtt_id, host, 1883)
-    #time.sleep(2)
-    #connect()
     # note that when you reset it still gets to the lines below
     # so need to set the value of b (although in the end it resets anyway)
     b = None
@@ -80,20 +81,15 @@ def callback(t):
     time.sleep(1)
     return
 
-  #if b:
   np.fill((0,50,0))
   np.write()
 
   try:
-    #MAX_BRIGHT = float(b[1].decode('ascii')) #######################################
-    #RGB = rgb1 if int(b[1]) < 2 else rgb2
-    #RGB = RGB_OPTIONS.get(int(b[1]), rgb1)
     zz = json.loads(b[1].decode('utf-8'))
     option = zz.get('rgb', 0)
     RGB = RGB_OPTIONS.get(option, rgb1)
     MAX_BRIGHT = zz.get('brightness', MAX_BRIGHT)
     FACTOR_ONE = zz.get('factor', FACTOR_ONE)
-  #except ValueError as e:
   except Exception as e:
     print(e)
 
@@ -134,11 +130,6 @@ while True:
       v += math.sin(math.sqrt((math.pow(cx, 2.0)+math.pow(cy, 2.0))+1.0)+current)
       v = (v+3.0)/6.0
 
-      # simpler option for the color (adding 1 since can't be negative)
-      b = 1 + math.sin(v*math.pi)
-      r = 1 + math.cos(v*math.pi)
-      g = 0
-
       # option below is more complicated formula for colors
       #r = 1 + math.sin(v*math.pi)
       #g = 1 + math.sin(v*math.pi+2.0*math.pi/3.0)
@@ -148,5 +139,8 @@ while True:
 
       #np[y*PIXEL_WIDTH+x] = (int(MAX_BRIGHT*r),int(MAX_BRIGHT*g),int(MAX_BRIGHT*b)) ####################################
       np[y*PIXEL_WIDTH+x] = RGB(v)
-
   np.write()
+
+  if flag[0]:
+    check_mqtt()
+    flag[0] = 0
