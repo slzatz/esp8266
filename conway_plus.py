@@ -21,9 +21,12 @@ pixels = neopixel.NeoPixel(Pin(13, Pin.OUT), PIXEL_WIDTH*PIXEL_HEIGHT)
 def conway_step():
   global board
   global color_board
-  new_board = board[:]
-  new_color_board = color_board[:]
+  # need to do the following equivalent to deep copy
+  new_board = [board[i][:] for i in range(len(board))] 
+  new_color_board = [color_board[i][:] for i in range(len(board))] 
+
   changed = False
+
   for x in range(PIXEL_HEIGHT):
     for y in range(PIXEL_WIDTH):
       num_neighbors = board[x-1][y-1] + board[x][y-1] + board[x+1][y-1] + board[x-1][y] \
@@ -43,11 +46,11 @@ def conway_step():
                                                    color_board[x+1][y], color_board[x+1][y+1], color_board[x][y+1], color_board[x-1][y+1])))
 
         new_color_board[x][y] = (color[0]//3, color[1]//3, color[2]//3)
-        print(new_color_board[x][y])
+        print("New dots color =", new_color_board[x][y])
         changed = True
   
-  board = new_board[:]
-  color_board = new_color_board[:]
+  board = new_board
+  color_board = new_color_board
   return changed
 
 def conway_rand():
