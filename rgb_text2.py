@@ -117,25 +117,13 @@ class Display:
             return pixel_offset 
 
         def pixel_mask(char, char_row, char_column):
-            # To save space, eliminated first 32 non-printing chars
+            # eliminated first 32 non-printing chars
             char_index_offset = (ord(char)-32) * font.rows
-            return font.bytes_[char_index_offset + char_row] >> (8-char_column) & 0x1
+            try:
+                return font.bytes_[char_index_offset + char_row] >> (8-char_column) & 0x1
+            except IndexError:
+                return 0
 
-        #pixels = (
-        #   (pixel_x(char_number, char_column),
-        #    pixel_y(char_row),
-        #    pixel_mask(char, char_row, char_column))
-        #    for char_number, char in enumerate(string)
-        #    for char_row in range(font.rows)
-        #    for char_column in range(font.cols)
-        #    )
-
-        #for pixel in pixels:
-        #    if pixel[2]:
-        #        #print((pixel[0],pixel[1], color))
-        #        self.pixel(pixel[0],pixel[1], color)
-
-        #new method
         for char_number, char in enumerate(string):
             for char_row in range(font.rows):
                 for char_column in range(font.cols):
