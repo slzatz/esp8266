@@ -5,7 +5,6 @@ Note MicroPython socket module supports file interface directly (read)
 
 import socket
 import ustruct as struct
-import time
 
 class MQTTClient:
 
