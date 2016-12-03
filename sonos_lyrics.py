@@ -1,6 +1,6 @@
 '''
 This relies on font2.py, rgb_text2.py and ili9341_text2.py to display track info on the TFT FeatherWing
-May only be able to handle 512 bytes max messages right now
+Uses unqtt_client_official.py
 '''
 
 import machine
