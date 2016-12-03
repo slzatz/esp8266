@@ -10,7 +10,7 @@ The buttons on OLED are also used:
     - Button B (GPIO 16): some boards this is redirected to another pin because 16 is not a normal
       pin but might work (needs a physical pull-up since there isn't a builtin pullup)
     - Button C (GPIO 2): plays any songs in the queue
-Note that this script sends mqtt messages and a script on the raspberry pi named esp_check_mqtt.py,
+Note that this script sends mqtt messages and a script on the raspberry pi named esp_check_mqtt.py
 which looks for the messages and then issues sonos commands
 
 There is a separate button that is connected to GPIO 14 that is on the board that has the
@@ -26,7 +26,7 @@ import json
 import network
 from config import hosts, ssid, pw 
 from ssd1306_min import SSD1306 as SSD
-from umqtt_client import MQTTClient as umc
+from umqtt_client_official import MQTTClient as umc
 from machine import Pin, I2C, ADC
 
 with open('mqtt_id', 'r') as f:
@@ -51,12 +51,15 @@ d.display()
 
 c = umc(mqtt_id, host, 1883)
 
+def mtpPublish(topic, msg):
+  mtopic = bytes([len(topic) >> 8, len(topic) & 255]) + topic.encode('utf-8')
+  return  bytes([0b00110001, len(mtopic) + len(msg)]) + mtopic + msg.encode('utf-8')
+
+play_wnyc_msg = mtpPublish('sonos/'+loc, '{"action":"play_wnyc"}')
+play_queue_msg = mtpPublish('sonos/'+loc, '{"action":"play_queue"}')
+play_pause_msg = mtpPublish('sonos/'+loc, '{"action":"play_pause"}')
+
 b = bytearray(1)
-# mtpPublish is a class method that produces a bytes object that is used in
-# the callback where we can't allocate any memory on the heap
-play_wnyc_msg = umc.mtpPublish('sonos/'+loc, '{"action":"play_wnyc"}')
-play_queue_msg = umc.mtpPublish('sonos/'+loc, '{"action":"play_queue"}')
-play_pause_msg = umc.mtpPublish('sonos/'+loc, '{"action":"play_pause"}')
 
 #callbacks
 # note that b[0] is set to 0 in the while loop
@@ -118,9 +121,26 @@ def run():
       pass
   print('network config:', wlan.ifconfig())     
 
-  c.connect()
-  c.subscribe('sonos/{}/current_track'.format(loc))
-  sleep(2) 
+  def callback(topic,msg):
+    zz = json.loads(msg.decode('utf-8'))
+    d.clear()
+    d.display()
+    d.draw_text(0, 0, zz.get('artist', '')[:20]) 
+
+    title = wrap(zz.get('title', ''), 20)
+    d.draw_text(0, 12, title[0])
+    if len(title) > 1:
+      d.draw_text(0, 24, title[1])
+    d.display()
+
+  r = c.connect()
+  print("connect:",r)
+
+  c.set_callback(callback)
+  r = c.subscribe('sonos/{}/current_track'.format(loc))
+  print("subscribe:",r)
+
+  sleep(5) 
 
   cur_time = time()
   bb = True
@@ -138,40 +158,14 @@ def run():
       level = new_level
       print("new level =", level)
 
-    z = c.check_msg()
-    if z:
-      print(z)
-      if isinstance(z, int):
-        print("returned an integer")
-        d.draw_text(123, 24, ' ')
-        if bb:
-          d.draw_text(123, 24, '|') 
-        else:
-          d.draw_text(123, 24, '-') 
-        bb = not bb
-        d.display()
-        continue
-
-      topic, msg = z
-      zz = json.loads(msg.decode('utf-8'))
-      print("assuming a tuple")
-      d.clear()
-      d.display()
-      d.draw_text(0, 0, zz.get('artist', '')[:20]) 
-
-      title = wrap(zz.get('title', ''), 20)
-      d.draw_text(0, 12, title[0])
-      if len(title) > 1:
-        d.draw_text(0, 24, title[1])
-      d.display()
+    c.check_msg()
 
     t = time()
     if t > cur_time + 30:
         c.ping()
         cur_time = t
     gc.collect()
-    #print(gc.mem_free())
     b[0] = 0 # for debouncing
     sleep(1)
 
-#run()
+run()
