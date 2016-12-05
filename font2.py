@@ -1,7 +1,9 @@
 '''
 This byte representation of a font was taken from a stackoverflow response
 It required reversing the x and y axis from the original smaller 5 x 8 font
-This is an 8 x 13 font.
+This is an 8 x 13 font - meaning the font is 8 bits wide and 13 bits high
+So each byte is one horizontal row of that character and you need to
+stack 13 of them in the Y axis to produce a character that is 13 high x 8 wide.
 http://stackoverflow.com/questions/2156572/c-header-file-with-bitmapped-fonts/2156872#2156872
 '''
 

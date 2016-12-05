@@ -66,19 +66,19 @@ def run():
     title = wrap(zz.get('title', ''), 28)
     y = 0 
     for line in title:
-      y+=20
+      y+=15 # was 20
       d.draw_text(0, y, line, ili.color565(0,255,0))
 
     lyrics = zz.get('lyrics', '')
     for line in lyrics:
       lines = wrap(line, 26)
       for line in lines:
-        y+=20
-        if y > 320:
-          sleep(3)
+        y+=15 # was 20
+        if y > 305:
+          sleep(5)
           d.fill(0)
           d.draw_text(0, 0, title[0], ili.color565(0,255,0))
-          y = 20
+          y = 15 # was 20
 
         d.draw_text(0, y, line, ili.color565(255,255,255))
 

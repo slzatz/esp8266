@@ -1,8 +1,8 @@
 '''
 This script is used in conjunction with rgb_text2.py and font2.py to utilize
 larger fonts on the Adafruit TFT FeatherWing - 2.4" 320x240 Touchscreen.
-This script is imported by ili9341_text2.py -- both that script and this one
-are being frozen into the Micropython firmware by being placed in the 
+This script is imported by sonos_lyrics. note that rgb_text2,py, font2.py and
+this script are being frozen into the Micropython firmware by being placed in the 
 micropython/esp8266/modules directory.  If you don't freeze them into the firmware,
 you run out of memory.
 These scripts are modified from Adafruit's Tony DiCola's scripts at:
@@ -10,6 +10,7 @@ https://github.com/adafruit/micropython-adafruit-rgb-display
 The Adafruit learning module is at:
 https://learn.adafruit.com/micropython-hardware-ili9341-tft-and-featherwing/overview
 '''
+
 import ustruct
 from rgb_text2 import DisplaySPI, color565
 

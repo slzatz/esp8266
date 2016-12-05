@@ -125,8 +125,8 @@ class Display:
                 return 0
 
         for char_number, char in enumerate(string):
-            for char_row in range(font.rows):
-                for char_column in range(font.cols):
+            for char_row in range(font.rows): #13
+                for char_column in range(font.cols): #8
                     if pixel_mask(char, char_row, char_column):
                         self.pixel(pixel_x(char_number,char_column),
                                    pixel_y(char_row),
