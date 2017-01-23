@@ -66,11 +66,17 @@ def run():
       pass
   print('network config:', wlan.ifconfig())     
 
+  # weather can be so long not much room for anything else
+  positions = [0, 260, 320]
+
   def callback(topic,msg):
     zz = json.loads(msg.decode('utf-8'))
-    y = 60*zz.get('pos', 0)
+    #y = 135*zz.get('pos', 0)
+    pos = zz.get('pos', 0)
+    y = positions[pos]
     # blank out section of display where you are writing the text (self,x,y,width,height,color)
-    d.fill_rectangle(0, y, 240, 60, 0)
+    #d.fill_rectangle(0, y, 240, 135, 0)
+    d.fill_rectangle(0, y, 240, positions[pos+1], 0)
     d.draw_text(0, y, zz.get('header', "No header"), ili.color565(0,255,0))
 
     for line in zz.get('text', ["No text"]):
