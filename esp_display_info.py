@@ -14,22 +14,15 @@ import gc
 from time import sleep, time
 import json
 import network
-from config import hosts, ssid, pw 
+from config import ssid, pw
+from config import mqtt_aws_host as host
 import ili9341_text2 as ili
 from umqtt_client_official import MQTTClient as umc
 
 with open('mqtt_id', 'r') as f:
     mqtt_id = f.read().strip()
 
-# the below should just be replaced with:
-# from config import mqtt_aws_host as host
-with open('location', 'r') as f:
-    loc = f.read().strip()
-
-host = hosts[loc]
-
 print("mqtt_id =", mqtt_id)
-print("location =", loc)
 print("host =", host)
 
 spi = machine.SPI(1, baudrate=32000000)
@@ -67,15 +60,15 @@ def run():
   print('network config:', wlan.ifconfig())     
 
   # weather can be so long not much room for anything else
-  positions = [0, 260, 320]
+  positions = [0, 260, 320, 320, 320] ###################################################
 
   def callback(topic,msg):
     zz = json.loads(msg.decode('utf-8'))
-    #y = 135*zz.get('pos', 0)
     pos = zz.get('pos', 0)
     y = positions[pos]
-    # blank out section of display where you are writing the text (self,x,y,width,height,color)
-    #d.fill_rectangle(0, y, 240, 135, 0)
+    if y > 305: #############################
+      return    #############################
+    # blank out section of display where you are writing the text;draw_text signature is (self,x,y,width,height,color)
     d.fill_rectangle(0, y, 240, positions[pos+1], 0)
     d.draw_text(0, y, zz.get('header', "No header"), ili.color565(0,255,0))
 
@@ -84,6 +77,8 @@ def run():
       for line in lines:
         y+=15 
         d.draw_text(0, y, line, ili.color565(255,255,255))
+
+    positions[pos+1] = y+15 if y < 305 else 320 ###############################################
 
   r = c.connect()
   print("connect:",r)
