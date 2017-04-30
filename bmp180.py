@@ -1,4 +1,7 @@
 '''
+This driver is from turbinenreiter and is at:
+https://github.com/micropython-IMU/micropython-bmp180
+
 bmp180 is a micropython module for the Bosch BMP180 sensor. It measures
 temperature as well as pressure, with a high enough resolution to calculate
 altitude.

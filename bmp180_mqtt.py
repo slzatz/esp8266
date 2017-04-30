@@ -30,7 +30,7 @@ while 1:
   print(temp)
 
   try:
-    c.publish("esp_tft", json.dumps({"header":"Temperature", "text":["nyc apt: "+str(temp)], "pos":0}))
+    c.publish("esp_tft", json.dumps({"header":"Temperature", "text":["nyc apt: "+str(temp)], "pos":0, "dest":(1,1)}))
   except Exception as e:
     print(e)
     c.sock.close()
