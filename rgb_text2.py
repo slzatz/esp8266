@@ -23,10 +23,10 @@ class DummyPin:
     def init(self, *args, **kwargs):
         pass
 
-    def low(self):
+    def off(self):
         pass
 
-    def high(self):
+    def on(self):
         pass
 
 class Display:
@@ -146,29 +146,29 @@ class DisplaySPI(Display):
         super().__init__(width, height)
 
     def reset(self):
-        self.rst.low()
+        self.rst.off()
         utime.sleep_ms(50)
-        self.rst.high()
+        self.rst.on()
         utime.sleep_ms(50)
 
     def _write(self, command=None, data=None):
         if command is not None:
-            self.dc.low()
-            self.cs.low()
+            self.dc.off()
+            self.cs.off()
             self.spi.write(bytearray([command]))
-            self.cs.high()
+            self.cs.on()
         if data is not None:
-            self.dc.high()
-            self.cs.low()
+            self.dc.on()
+            self.cs.off()
             self.spi.write(data)
-            self.cs.high()
+            self.cs.on()
 
     def _read(self, command=None, count=0):
-        self.dc.low()
-        self.cs.low()
+        self.dc.off()
+        self.cs.off()
         if command is not None:
             self.spi.write(bytearray([command]))
         if count:
             data = self.spi.read(count)
-        self.cs.high()
+        self.cs.on()
         return data
