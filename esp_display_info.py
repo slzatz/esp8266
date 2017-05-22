@@ -1,20 +1,18 @@
 '''
 This relies on font2.py, rgb_text2.py and ili9341_text2.py to display info on the TFT FeatherWing
 Uses umqtt_client_official.py
-The mqtt topic is:  'esp_tft'
+The mqtt topic is determined by the config file but previously was hardcoded as 'esp_tft'
 The format of the mqtt messages is:
 {"header":"Weather", "text":"Some text goes here", "pos":2}
-The position is whether it is the first, second, third etc item on the screen going top to bottom
-The script running on raspberry pis that generates the mqtt messages is ...
+my thought is to display all messages at the top of the display so the pos(ition) doesn't matter
 Note you must transfer config, mqtt_id and location to the esp8266 (e.g., using ampy)
 '''
 
 import machine
-import gc
 from time import sleep, time
 import json
 import network
-from config import ssid, pw
+from config import ssid, pw, topic
 from config import mqtt_aws_host as host
 import ili9341_text2 as ili
 from umqtt_client_official import MQTTClient as umc
@@ -59,34 +57,23 @@ def run():
       pass
   print('network config:', wlan.ifconfig())     
 
-  # weather can be so long not much room for anything else
-  #positions = [0, 260, 320, 320, 320] 
-  positions = [0, 0, 0, 0, 0] 
-
-  def callback(topic,msg):
+  def callback(topic, msg):
     zz = json.loads(msg.decode('utf-8'))
-    pos = zz.get('pos', 0)
-    y = positions[pos]
-    if y > 305: 
-      return    
-    # blank out section of display where you are writing the text;draw_text signature is (self,x,y,width,height,color)
-    #d.fill_rectangle(0, y, 240, positions[pos+1], 0)
-    d.fill_rectangle(0, y, 240, 320, 0) # idea is to always erase from first line of info ast pos 0,1,2 etc. to the end of the screen - does require writing in order of position
-    d.draw_text(0, y, zz.get('header', "No header"), ili.color565(0,255,0))
+    d.fill_rectangle(0, 0, 240, 320, 0) # erase before writing new info
+    d.draw_text(0, 0, zz.get('header', "No header"), ili.color565(0,255,0))
 
+    y = 0
     for line in zz.get('text', ["No text"]):
       lines = wrap(line, 26)
       for line in lines:
         y+=15 
         d.draw_text(0, y, line, ili.color565(255,255,255))
 
-    positions[pos+1] = y+15 if y < 305 else 320 
-
   r = c.connect()
   print("connect:",r)
 
   c.set_callback(callback)
-  r = c.subscribe('esp_tft')
+  r = c.subscribe(topic)
   print("subscribe:",r)
 
   sleep(5) 
@@ -101,7 +88,6 @@ def run():
     if t > cur_time + 30:
         c.ping()
         cur_time = t
-    gc.collect()
     sleep(1)
 
 run()
