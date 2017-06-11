@@ -18,13 +18,15 @@ volume potentiometer and that button play_pauses.
 
 On some setups, I have rewired GPIO 16 on the OLED to GPIO 13, which is a normal pin
 The script also pings the broker to keep it alive
+
+The topic is sonos/ct or sonos/nyc
 '''
 
 import gc
 from time import sleep, time
 import json
 import network
-from config import hosts, ssid, pw 
+from config import mqtt_aws_host, ssid, pw 
 from ssd1306_min import SSD1306 as SSD
 from umqtt_client_official import MQTTClient as umc
 from machine import Pin, I2C, ADC
@@ -35,12 +37,10 @@ with open('mqtt_id', 'r') as f:
 with open('location', 'r') as f:
     loc = f.read().strip()
 
-host = hosts[loc]
-
 print("version plays wnyc")
 print("mqtt_id =", mqtt_id)
 print("location =", loc)
-print("host =", host)
+print("mqtt_aws_host =", mqtt_aws_host)
 
 i2c = I2C(scl=Pin(5), sda=Pin(4), freq=400000)
 
@@ -49,7 +49,7 @@ d.init_display()
 d.draw_text(0, 0, "HELLO STEVE")
 d.display()
 
-c = umc(mqtt_id, host, 1883)
+c = umc(mqtt_id, mqtt_aws_host, 1883)
 
 def mtpPublish(topic, msg):
   mtopic = bytes([len(topic) >> 8, len(topic) & 255]) + topic.encode('utf-8')
@@ -137,7 +137,7 @@ def run():
   print("connect:",r)
 
   c.set_callback(callback)
-  r = c.subscribe('sonos/{}/current_track'.format(loc))
+  r = c.subscribe('sonos/{}/track'.format(loc))
   print("subscribe:",r)
 
   sleep(5) 
