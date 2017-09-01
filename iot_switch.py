@@ -8,25 +8,32 @@ my thought is to display all messages at the top of the display so the pos(ition
 Note you must transfer config, mqtt_id and location to the esp8266 (e.g., using ampy)
 '''
 
-import machine
 from time import sleep, time
 import json
 import network
-from config import ssid, pw, topic, mqtt_aws_host
-import ili9341_text2 as ili
+from config import ssid, pw, mqtt_aws_host
+from ssd1306_min import SSD1306 as SSD
 from umqtt_client_official import MQTTClient as umc
+from machine import Pin, I2C
 
 with open('mqtt_id', 'r') as f:
     mqtt_id = f.read().strip()
 
+with open('topic', 'r') as f:
+    topic = f.read().strip()
+
 print("mqtt_id =", mqtt_id)
 print("host =", mqtt_aws_host)
+print("topic =", topic)
 
-spi = machine.SPI(1, baudrate=32000000)
-d = ili.ILI9341(spi, cs=machine.Pin(0), dc=machine.Pin(15))
+i2c = I2C(scl=Pin(5), sda=Pin(4), freq=400000)
 
-d.fill(0)
-d.draw_text(0, 0, "Hello Steve", ili.color565(255,255,255))
+d = SSD(i2c)
+d.init_display()
+d.draw_text(0, 0, "HELLO STEVE")
+d.display()
+
+led = Pin(15, Pin.OUT)
 
 c = umc(mqtt_id, mqtt_aws_host, 1883)
 
@@ -42,18 +49,31 @@ def run():
 
   def callback(topic, msg):
     zz = json.loads(msg.decode('utf-8'))
-    msg = zz.get('msg', 'No message')
-    d.fill_rectangle(0, 0, 240, 50, 0) # erase before writing new info
-    d.draw_text(0, 0, "message: "+msg, ili.color565(0,255,0))
+    msg = zz.get('message', '')
+    bv = zz.get('batteryVoltage', '')
+    sn = zz.get('serialNumber', '')
+    ct = zz.get('clickType', '')
 
-    if msg == 'on':
-      #pin goes high
-      pass
-    elif msg == 'off':
-      #pin goes low
-      pass
+#    if msg == 'on':
+#      led.value(1)  
+#    elif msg == 'off':
+#      led.value(0)  
+#    else:
+#      pass
+
+    if ct == 'SINGLE':
+      led.value(1)
+    elif ct == 'DOUBLE':
+      led.value(0)
     else:
       pass
+
+    d.clear()
+    d.display()
+    d.draw_text(0, 0, "Message: "+msg) 
+    d.draw_text(0, 12, "Battery Voltage: "+bv) 
+    d.draw_text(0, 24, "Click Type: "+ct) 
+    d.display()
 
   r = c.connect()
   print("connect:",r)
