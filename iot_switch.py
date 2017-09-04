@@ -1,11 +1,19 @@
 '''
-This relies on font2.py, rgb_text2.py and ili9341_text2.py to display info on the TFT FeatherWing
-Uses umqtt_client_official.py
-The mqtt topic is determined by the config file but previously was hardcoded as 'esp_tft'
-The format of the mqtt messages is:
-{"header":"Weather", "text":"Some text goes here", "pos":2}
-my thought is to display all messages at the top of the display so the pos(ition) doesn't matter
-Note you must transfer config, mqtt_id and location to the esp8266 (e.g., using ampy)
+The basic setup here is to have an Adafruit Feather HUZZAH ESP8266 plus a Featherwing OLED SSD1306
+This particular version is specific to the AWS IoT Button, the initial use for which is to
+turn on the electric hot water kettle so that you can get that going before going downstairs to make coffee
+The MQTT broker is running on an EC2 instance. 
+The esp8266+OLED that subscribes to the topic is turning on and off a Data Loggers IoT Control Relay.
+Uses umqtt_client_official.py - my renamed version of the official simple mqtt script
+The mqtt topic is in a separate file called topic that is read on startup and right now is "switch"
+Pressing the AWS IoT switch triggers an AWS Lambda function that sends the MQTT message to the EC2 MQTT broker
+with topic "switch" and the jsonified info that the AWS IoT Button generates, which is:
+
+{"batteryVoltage": "1705mV", "serialNumber": "G030MD0371271BB1", "clickType": "SINGLE"}
+
+Note the clickType can be SINGLE, DOUBLE or LONG.
+
+I am using SINGLE to turn the relay swith on and DOUBLE to shut it off.
 '''
 
 from time import sleep, time
