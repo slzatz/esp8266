@@ -3,7 +3,7 @@ This uses the homemade Feather Wing doubler: one of the top boards is the
 Feather Wing SSD1306 OLED and the other is a homemade board that has a
 play/pause button and a potentiometer.
 This micropython script displays songs that are being scrobbled to the mqtt broker
-running in AWS EC2 or locally (most recently locally)
+running in AWS EC2 
 On Huzzah ESP8266 Feather, buttons A, B & C connect to 0, 16, 2 respectively
 The buttons on OLED are also used:
     - Button A (GPIO 0): play wnyc since that is such a frequent thing that I want to do
