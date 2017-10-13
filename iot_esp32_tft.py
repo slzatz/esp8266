@@ -6,6 +6,9 @@ This takes advantage of a C implementation of MQTT that reuns in the background 
 The MQTT broker is running on an EC2 instance. 
 Note that multiple mqtt clients can be created.
 The mqtt topic is in a separate file called topic 
+MQTT messages are json in the form of:
+{"text":["The rain in spain {RED} falls mainly on the {GREEN} plain", "Now is the time for all good {BLUE}men {WHITE}to come to the aid of their country"]}
+Note you have to explicity unsubscribe - it retains subscriptions through power down somehow
 '''
 
 import network, utime
@@ -38,13 +41,18 @@ regex= re.compile('{(.*?)}')
 def display_text(s, n, tag=None, h=0):
 
   # the following two things can only happen the first time a string is processed
-  if s[0] != '{': # deal with strings with no pos 0 tag (they may be tags elsewhere in the string)
+  if s and s[0] != '{': # deal with strings with no pos 0 tag (they may be tags elsewhere in the string)
     s = '{WHITE}' + s
   if tag is None: 
     z = regex.search(s)
     tag = z.group(0)
   
-  col = tag[1:-1]
+  col = tag[1:-1].upper()
+  col = col if col else 'WHITE' # {} was used for white, which produces col = '', so need to do this check
+  if col == '':
+    col = 'WHITE'
+  if col == 'GREY':
+    col = 'LIGHTGREY'
   s = s[len(tag):]
   z = regex.search(s)
   if z is None:
@@ -62,25 +70,29 @@ def display_text(s, n, tag=None, h=0):
   return display_text(s[pos:], n, tag2, h)
 
 def wrap(text,lim):
+  # a little tricky to deal with {RED} since can be at beginning or end of a regular word
+  # z = regex.search(word)
+  #if z: inc = len(word) - len(z.group(0)) else len(word)
   lines = []
   pos = 0 
   line = []
   for word in text.split():
-    if pos + len(word) < lim + 1:
+    z = regex.search(word)
+    ln = len(word)-len(z.group(0)) if z else len(word)
+    if pos+ln < lim+1:
       line.append(word)
-      pos+= len(word) + 1 
+      pos+= ln+1 
     else:
       lines.append(' '.join(line))
       line = [word] 
-      pos = len(word)
+      pos = ln
 
   lines.append(' '.join(line))
   return lines
 
 line_height = tft.fontSize()[1]
 MAX_HEIGHT = 320
-max_chars_line = 40         
-indent = 17
+max_chars_line = 30 #240/tft.fontSize()[0] # note that there is hidden markup that are treated like words
 
 def conncb(task):
   print("[{}] Connected".format(task))
@@ -104,11 +116,7 @@ def datacb(msg):
   t = "{}".format(utime.strftime("%c", utime.localtime()))
   bullets = zz.get('bullets', True)
 
-
   tft.clear()
-  #tft.text(0, 0, msg[1], random(0xFFFFFF))
-  #tft.text(0, 12, t, random(0xFFFFFF))
-  #tft.text(0, 24, msg, 0x00FF00))
 
   n = line_height #20
   for item in zz.get('text',['No text']): 
@@ -116,8 +124,6 @@ def datacb(msg):
       n+=line_height
       continue
     #font.set_bold(False)
-    #max_chars_line = 40        
-    #indent = 17
     n+=4 if bullets else 0 # makes multi-line bullets more separated from prev and next bullet
 
     if n+line_height > MAX_HEIGHT:
@@ -126,18 +132,16 @@ def datacb(msg):
     if item[0] == '#':
       item=item[1:]
       #font.set_bold(True)
-      #max_chars_line = 60
 
     if item[0] == '*': 
-      #foo.blit(star, (2,n+7))
       item=item[1:]
+      #foo.blit(star, (2,n+7))
     elif bullets:
       #foo.blit(bullet_surface, (7,n+13)) #(4,n+13)
       pass
     # neither a star in front of item or a bullet
     else:
       #max_chars_line+= 1 
-      #indent = 10
       pass
 
     print("item=",item)
