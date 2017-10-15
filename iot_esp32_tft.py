@@ -71,20 +71,25 @@ def display_text(s, n, tag=None, h=0):
 
 def wrap(text,lim):
   # a little tricky to deal with {RED} since can be at beginning or end of a regular word
-  # z = regex.search(word)
-  #if z: inc = len(word) - len(z.group(0)) else len(word)
   lines = []
   pos = 0 
   line = []
+  last_tag = None
   for word in text.split():
+    ln = len(word)
     z = regex.search(word)
-    ln = len(word)-len(z.group(0)) if z else len(word)
+    if z:
+      last_tag = z.group(0)
+      ln-= len(last_tag)
     if pos+ln < lim+1:
       line.append(word)
       pos+= ln+1 
     else:
       lines.append(' '.join(line))
-      line = [word] 
+      if last_tag and word[0]!='{':
+        line = [last_tag+word]
+      else:
+        line=[word]
       pos = ln
 
   lines.append(' '.join(line))
@@ -97,8 +102,8 @@ max_chars_line = 30 #240/tft.fontSize()[0] # note that there is hidden markup th
 def conncb(task):
   print("[{}] Connected".format(task))
 
-#def disconncb(task):
-#  print("[{}] Disconnected".format(task))
+def disconncb(task):
+  print("[{}] Disconnected".format(task))
 
 def subscb(task):
   print("[{}] Subscribed".format(task))
@@ -175,9 +180,9 @@ else:
     print("Could not synchronize with ntp")
 print("Time set to: {}".format(utime.strftime("%c", utime.localtime())))
 
-mqttc = network.mqtt(mqtt_id, mqtt_aws_host)
+mqttc = network.mqtt(mqtt_id, mqtt_aws_host, connected_cb=conncb)
 utime.sleep(1)
-mqttc.config(subscribed_cb=subscb, connected_cb=conncb, data_cb=datacb)
+mqttc.config(subscribed_cb=subscb, disconnected_cb=disconncb, data_cb=datacb)
 mqttc.subscribe(topic)
 
 cur_time = utime.time()
