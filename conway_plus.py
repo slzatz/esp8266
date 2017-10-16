@@ -89,7 +89,7 @@ def color():
   return (random(), random(), random())
 
 conway_rand()
-
+n = 0
 while True:
   if not conway_step():
     utime.sleep(5)
@@ -104,4 +104,7 @@ while True:
 
   pixels.write()
   utime.sleep(0.1)
-
+  n+=1
+  if n > 100:
+    conway_rand()
+    n = 0

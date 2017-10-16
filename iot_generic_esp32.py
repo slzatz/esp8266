@@ -36,6 +36,10 @@ d.text("HELLO STEVE", 0, 0)
 d.show()
 
 pin15 = Pin(15, Pin.OUT)
+<<<<<<< HEAD
+=======
+
+>>>>>>> 2efa4d72641df18a3b61e2004045071c8268f56d
 def conncb(task):
   print("[{}] Connected".format(task))
 
