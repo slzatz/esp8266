@@ -35,7 +35,7 @@ d.init_display()
 d.text("HELLO STEVE", 0, 0)
 d.show()
 
-#pin15 = Pin(15, Pin.OUT)
+pin15 = Pin(15, Pin.OUT)
 def conncb(task):
   print("[{}] Connected".format(task))
 
@@ -58,10 +58,10 @@ def datacb(msg):
   t = zz.get('time', "{}".format(utime.strftime("%c", utime.localtime())))
 
   if msg == 'on':
-    #pin15.value(1)  
+    pin15.value(1)  
     pass
   elif msg == 'off':
-    #pin15.value(0)  
+    pin15.value(0)  
     pass
   else:
     pass
