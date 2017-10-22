@@ -156,6 +156,11 @@ def datacb(msg):
     for line in lines:
       display_text(line, n)
       n+=line_height
+
+  if zz.get('header')=='Weather':
+    tft.circle(120, 150, 30, tft.YELLOW, tft.YELLOW)
+
+
 #############################
 
 wlan = network.WLAN(network.STA_IF)
@@ -180,7 +185,7 @@ else:
     print("Could not synchronize with ntp")
 print("Time set to: {}".format(utime.strftime("%c", utime.localtime())))
 
-mqttc = network.mqtt(mqtt_id, mqtt_aws_host, connected_cb=conncb)
+mqttc = network.mqtt(mqtt_id, mqtt_aws_host, connected_cb=conncb, clientid=mqtt_id)
 utime.sleep(1)
 mqttc.config(subscribed_cb=subscb, disconnected_cb=disconncb, data_cb=datacb)
 mqttc.subscribe(topic)
