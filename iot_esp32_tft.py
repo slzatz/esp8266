@@ -1,9 +1,9 @@
 '''
-This script runs on @loboris fork of MicroPython for the ESP32
-The fork runs MicroPython as an RTOS process and wraps interesting display and mqtt modules.
+This script runs on @loboris port of MicroPython for the ESP32
+The port runs MicroPython as an RTOS process and wraps useful modules like display and mqtt.
 This script displays mqtt messages to the TFT Featherwing using @loboris display module
 This takes advantage of a C implementation of MQTT that reuns in the background as a separate freeRTOS task.
-The MQTT broker is running on an EC2 instance. 
+The MQTT broker is running on an AWS EC2 instance. 
 Note that multiple mqtt clients can be created.
 The mqtt topic is in a separate file called topic 
 MQTT messages are json in the form of:
@@ -11,12 +11,14 @@ MQTT messages are json in the form of:
 Note you have to explicity unsubscribe - it retains subscriptions through power down somehow
 '''
 
-import network, utime
+import network
+import utime
+import gc
 import display
 from machine import Pin, I2C, RTC, random
 import json
 import ure as re
-from config import ssid, pw, mqtt_aws_host
+from config import ssid, pw, mqtt_aws_host, width, height, font
 
 with open('mqtt_id', 'r') as f:
     mqtt_id = f.read().strip()
@@ -29,8 +31,10 @@ print("host =", mqtt_aws_host)
 print("topic =", topic)
 
 tft = display.TFT()
-tft.init(tft.ILI9341, width=240, height=320, miso=19, mosi=18, clk=5, cs=15, dc=33, bgr=True)
-utime.sleep(1)
+tft.init(tft.ILI9341, width=width, height=height, miso=19, mosi=18, clk=5, cs=15, dc=33, bgr=True)
+font_num = getattr(tft, font)
+tft.font(font_num)
+#utime.sleep(1)
 tft.clear()
 tft.text(10, 10, "Hello Steve", random(0xFFFFFF))
 
@@ -96,7 +100,6 @@ def wrap(text,lim):
   return lines
 
 line_height = tft.fontSize()[1]
-MAX_HEIGHT = 320
 max_chars_line = 30 #240/tft.fontSize()[0] # note that there is hidden markup that are treated like words
 
 def conncb(task):
@@ -129,9 +132,9 @@ def datacb(msg):
       n+=line_height
       continue
     #font.set_bold(False)
-    n+=4 if bullets else 0 # makes multi-line bullets more separated from prev and next bullet
+    n+=4 if bullets else 2 # makes multi-line bullets more separated from prev and next bullet
 
-    if n+line_height > MAX_HEIGHT:
+    if n+line_height > height:
       break
 
     if item[0] == '#':
@@ -160,7 +163,7 @@ def datacb(msg):
   if zz.get('header')=='Weather':
     tft.circle(120, 150, 30, tft.YELLOW, tft.YELLOW)
 
-
+  gc.collect()
 #############################
 
 wlan = network.WLAN(network.STA_IF)
