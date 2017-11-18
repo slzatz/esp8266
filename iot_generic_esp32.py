@@ -36,10 +36,7 @@ d.text("HELLO STEVE", 0, 0)
 d.show()
 
 pin15 = Pin(15, Pin.OUT)
-<<<<<<< HEAD
-=======
 
->>>>>>> 2efa4d72641df18a3b61e2004045071c8268f56d
 def conncb(task):
   print("[{}] Connected".format(task))
 
@@ -62,11 +59,9 @@ def datacb(msg):
   t = zz.get('time', "{}".format(utime.strftime("%c", utime.localtime())))
 
   if msg == 'on':
-    pin15.value(1)  
-    pass
+    pin15.value(1)
   elif msg == 'off':
-    pin15.value(0)  
-    pass
+    pin15.value(0)
   else:
     pass
 
@@ -99,9 +94,9 @@ else:
     print("Could not synchronize with ntp")
 print("Time set to: {}".format(utime.strftime("%c", utime.localtime())))
 
-mqttc = network.mqtt(mqtt_id, mqtt_aws_host)
+mqttc = network.mqtt(mqtt_id, mqtt_aws_host, connected_cb=conncb, clientid=mqtt_id)
 utime.sleep(1)
-mqttc.config(subscribed_cb=subscb, connected_cb=conncb, data_cb=datacb)
+mqttc.config(subscribed_cb=subscb, data_cb=datacb)
 mqttc.subscribe(topic)
 
 cur_time = utime.time()
