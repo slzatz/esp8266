@@ -22,7 +22,7 @@ The topic that is subscribed to for track info is sonos/{loc}/track
 '''
 import gc
 import network
-from time import sleep, sleep_ms, time, strftime, localtime
+from time import sleep, sleep_ms, time, strftime, localtime #time
 from machine import Pin, I2C, ADC, RTC
 import json
 from config import ssid, pw, mqtt_aws_host
@@ -42,6 +42,8 @@ topic = 'sonos/{}/track'.format(loc)
 print("mqtt_id =", mqtt_id)
 print("host =", mqtt_aws_host)
 print("topic =", topic)
+
+p15 = Pin(15, Pin.IN, Pin.PULL_UP) #button on homemade volume play/pause board
 
 adc = ADC(Pin(36))
 
@@ -137,14 +139,14 @@ sleep(1)
 mqttc.config(subscribed_cb=subscb, data_cb=datacb)
 mqttc.subscribe(topic)
 
-cur_time = time()
+#cur_time = time()
 level = 300
 
 while 1:
-  t = time()
-  if t > cur_time + 600:
-    print(strftime("%c", localtime()))
-    cur_time = t
+  #t = time()
+  #if t > cur_time + 600:
+   # print(strftime("%c", localtime()))
+   # cur_time = t
 
   new_level = 1000-adc.read() # since current wiring has clockwise decreasing voltage
   if abs(new_level-level) > 10:
@@ -157,5 +159,12 @@ while 1:
     level = new_level
     print("new level =", level)
 
+  #print(p15.value())
+  if not p15.value():
+    try:
+      mqttc.publish('sonos/'+loc, json.dumps({"action":"play_pause"}))
+    except Exception as e:
+      print(e)
+
   gc.collect()
-  sleep(1)
+  sleep(.5)
