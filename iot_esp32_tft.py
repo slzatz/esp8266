@@ -18,7 +18,7 @@ import display
 from machine import Pin, I2C, RTC, random
 import json
 import ure as re
-from config import ssid, pw, mqtt_aws_host, width, height, font
+from config import ssid, pw, mqtt_aws_host, width, height, font, display_type
 
 with open('mqtt_id', 'r') as f:
     mqtt_id = f.read().strip()
@@ -31,7 +31,14 @@ print("host =", mqtt_aws_host)
 print("topic =", topic)
 
 tft = display.TFT()
-tft.init(tft.ILI9341, width=width, height=height, miso=19, mosi=18, clk=5, cs=15, dc=33, bgr=True)
+
+if display_type == 'WROVER':
+    # ST7735 built into esp-wrover kit
+    tft.init(tft.ST7789, rst_pin=18, backl_pin=5, miso=25, mosi=23, clk=19, cs=22, dc=21)
+else:
+    # ILI9341
+    tft.init(tft.ILI9341, width=width, height=height, miso=19, mosi=18, clk=5, cs=15, dc=33, bgr=True)
+
 font_num = getattr(tft, font)
 tft.font(font_num)
 #utime.sleep(1)

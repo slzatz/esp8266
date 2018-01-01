@@ -1,5 +1,8 @@
 # config files
 config.*
+location
+mqtt_id
+topic
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
