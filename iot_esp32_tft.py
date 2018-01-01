@@ -33,7 +33,7 @@ print("topic =", topic)
 tft = display.TFT()
 
 if display_type == 'WROVER':
-    # ST7735 built into esp-wrover kit
+    # ST7789V used by v3 esp-wrover kit
     tft.init(tft.ST7789, rst_pin=18, backl_pin=5, miso=25, mosi=23, clk=19, cs=22, dc=21)
 else:
     # ILI9341
