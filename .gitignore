@@ -1,5 +1,6 @@
 # config files
 config.*
+settings.*
 location
 mqtt_id
 topic

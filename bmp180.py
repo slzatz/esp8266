@@ -47,7 +47,7 @@ class BMP180():
         # create i2c obect
         _bmp_addr = self._bmp_addr
         self._bmp_i2c = i2c_bus
-        self._bmp_i2c.start()
+        #self._bmp_i2c.start() # commented out trying to get esp32 lobo to work
         self.chip_id = self._bmp_i2c.readfrom_mem(_bmp_addr, 0xD0, 2)
         # read calibration data from EEPROM
         self._AC1 = unp('>h', self._bmp_i2c.readfrom_mem(_bmp_addr, 0xAA, 2))[0]
