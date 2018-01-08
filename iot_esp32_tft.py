@@ -1,11 +1,10 @@
 '''
 This script runs on @loboris port of MicroPython for the ESP32
 The port runs MicroPython as an RTOS process and wraps useful modules like display and mqtt.
-This script displays mqtt messages to the TFT Featherwing using @loboris display module
+This script displays mqtt messages to the TFT Featherwing or wrover-kit TFT using @loboris display module
 This takes advantage of a C implementation of MQTT that reuns in the background as a separate freeRTOS task.
 The MQTT broker is running on an AWS EC2 instance. 
 Note that multiple mqtt clients can be created.
-The mqtt topic is in a separate file called topic 
 MQTT messages are json in the form of:
 {"text":["The rain in spain {RED} falls mainly on the {GREEN} plain", "Now is the time for all good {BLUE}men {WHITE}to come to the aid of their country"]}
 Note you have to explicity unsubscribe - it retains subscriptions through power down somehow
@@ -18,22 +17,17 @@ import display
 from machine import Pin, I2C, RTC, random
 import json
 import ure as re
-from config import ssid, pw, mqtt_aws_host, width, height, font, display_type
-
-with open('mqtt_id', 'r') as f:
-    mqtt_id = f.read().strip()
-
-with open('topic', 'r') as f:
-    topic = f.read().strip()
+from config import ssid, pw, mqtt_aws_host
+from settings import width, height, font, display_type, mqtt_id, sub_topic
 
 print("mqtt_id =", mqtt_id)
 print("host =", mqtt_aws_host)
-print("topic =", topic)
+print("subscription topic =", sub_topic)
 
 tft = display.TFT()
 
 if display_type == 'WROVER':
-    # ST7789V used by v3 esp-wrover kit
+    # ST7789V used by v3 esp-wrover kit (I think default is 240 x 320)
     tft.init(tft.ST7789, rst_pin=18, backl_pin=5, miso=25, mosi=23, clk=19, cs=22, dc=21)
 else:
     # ILI9341
@@ -49,6 +43,7 @@ tft.text(10, 10, "Hello Steve", random(0xFFFFFF))
 
 regex= re.compile('{(.*?)}')
 #s = "jkdsfl{RED}fkjsdflds{GREEN}jlklfjsl{PINK}lkdsjflkdsjfl"
+
 def display_text(s, n, tag=None, h=0):
 
   # the following two things can only happen the first time a string is processed
@@ -107,7 +102,8 @@ def wrap(text,lim):
   return lines
 
 line_height = tft.fontSize()[1]
-max_chars_line = 30 #240/tft.fontSize()[0] # note that there is hidden markup that are treated like words
+# note for below -- average width seems to be about 1/2 of font size
+max_chars_line = int(1.8*width/tft.fontSize()[0]) # 30; note that there is hidden markup that are treated like words
 
 def conncb(task):
   print("[{}] Connected".format(task))
@@ -164,8 +160,10 @@ def datacb(msg):
     print("lines=",lines)
 
     for line in lines:
-      display_text(line, n)
-      n+=line_height
+      # a line could be blank and right now display_text doesn't like that
+      if line:
+        display_text(line, n)
+        n+=line_height
 
   if zz.get('header')=='Weather':
     tft.circle(120, 150, 30, tft.YELLOW, tft.YELLOW)
@@ -198,13 +196,13 @@ print("Time set to: {}".format(utime.strftime("%c", utime.localtime())))
 mqttc = network.mqtt(mqtt_id, mqtt_aws_host, connected_cb=conncb, clientid=mqtt_id)
 utime.sleep(1)
 mqttc.config(subscribed_cb=subscb, disconnected_cb=disconncb, data_cb=datacb)
-mqttc.subscribe(topic)
+mqttc.subscribe(sub_topic)
 
 cur_time = utime.time()
 
 while 1:
   t = utime.time()
   if t > cur_time + 600:
-    print(utime.strftime("%c", utime.localtime()))
+    print(utime.strftime("%X", utime.localtime()))
     cur_time = t
   utime.sleep(1)
