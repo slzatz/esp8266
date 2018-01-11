@@ -129,10 +129,11 @@ def datacb(msg):
 
   tft.clear()
 
-  n = line_height #20
+  #n = line_height #20
+  n = 0
   for item in zz.get('text',['No text']): 
     if not item.strip():
-      n+=line_height
+      #n+=line_height
       continue
     #font.set_bold(False)
     n+=4 if bullets else 2 # makes multi-line bullets more separated from prev and next bullet
@@ -161,7 +162,7 @@ def datacb(msg):
 
     for line in lines:
       # a line could be blank and right now display_text doesn't like that
-      if line:
+      if line.strip():
         display_text(line, n)
         n+=line_height
 
