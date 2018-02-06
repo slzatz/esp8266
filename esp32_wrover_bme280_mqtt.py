@@ -15,8 +15,8 @@ import json
 import utime
 import display
 from bme280 import BME280
-from config import ssid, pw, mqtt_aws_host
-from settings import mqtt_id, pos, pub_topic, period, location, display_type, font
+from config import mqtt_aws_host, font
+from settings import ssid, pw, mqtt_id, pos, pub_topic, period, location, display_type
 
 print("mqtt_id =", mqtt_id)
 print("host =", mqtt_aws_host)
