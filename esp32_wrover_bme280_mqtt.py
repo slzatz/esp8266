@@ -1,19 +1,21 @@
 '''
-This script is designed to run on Loboris' fork of MicroPython running on an ESP32
-Loboris has made a number of additions including things like hardware I2C, which this uses.
-It also has 4MB of psRAM
-Build configured to support an SD card and could write readings to the card but not implemented yet
+This script is for periodically sampling temperature and humidity from a bme280
+sensor attached to an ESP32 and is designed to run on Loboris' fork of MicroPython
+for the ESP32 located at https://github.com/loboris/MicroPython_ESP32_psRAM_LoBo
+Loboris has made a number of additions including, most importantly, the ability to
+utilize the psRAM (4MB) that is included on the esp32 wrover chip. 
+Loboris' port also includes hardware I2C, an FTP server and a telnet server.
 This script is intended to run on the esp32 wrover dev kit which uses the ST7789V to drive a 240 x 320 LCD
-The MQTT broker is running on an EC2 instance. 
-This takes advantage of a C implementation of MQTT that runs in the background as a separate freeRTOS tas.
-Note that multiple clients can be created.
+The MQTT broker is running on my AWS EC2 instance. 
+This takes advantage of a C implementation of MQTT that runs in the background as a separate freeRTOS task.
+Note that multiple MQTT clients can be created.
 '''
 
 from machine import Pin, I2C, RTC, random
 import network
 import json
 import utime
-import display
+import display 
 from bme280 import BME280
 from config import mqtt_aws_host, font
 from settings import ssid, pw, mqtt_id, pos, pub_topic, period, location, display_type
@@ -22,8 +24,8 @@ print("mqtt_id =", mqtt_id)
 print("host =", mqtt_aws_host)
 print("pub topic =", pub_topic)
 
-sda = Pin(13, Pin.PULL_UP) #23
-scl = Pin(12, Pin.PULL_UP) #22
+sda = Pin(13, Pin.PULL_UP) #23 #sdi on the bme280
+scl = Pin(12, Pin.PULL_UP) #22 #sck on the bme280
 i2c = I2C(scl=scl, sda=sda)
 bme = BME280(i2c=i2c, address=0x77)
 
