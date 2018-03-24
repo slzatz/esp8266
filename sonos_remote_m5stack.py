@@ -30,7 +30,6 @@ tft.font(tft.FONT_DejaVu18, fixedwidth=False)
 tft.clear()
 tft.text(tft.CENTER, 20, "Hello Steve \n")
 
-print("version plays wnyc")
 print("mqtt_id =", mqtt_id)
 print("location =", loc)
 print("mqtt_aws_host =", mqtt_aws_host)
@@ -75,7 +74,16 @@ def datacb(msg):
     zz = {}
 
   tft.clear()
-  tft.text(5, 5, zz.get('artist', '')+"\n") 
+  ##################################################################
+  artist = zz.get('artist', '')
+  if artist:
+    try:
+      tft.image(0,0,'/sd/{}.jpg'.format(artist.lower()))
+    except:
+      pass
+  ##################################################################
+  #tft.text(5, 5, zz.get('artist', '')+"\n") 
+  tft.text(5, 5, artist+"\n") 
 
   title = wrap(zz.get('title', ''), 28) # 28 seems right for DejaVu18
   for line in title:
