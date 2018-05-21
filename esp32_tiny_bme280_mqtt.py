@@ -48,7 +48,8 @@ def pubcb(pub):
 
 #end mqtt callbacks ################################################################
 
-mqttc = network.mqtt(mqtt_id, mqtt_aws_host, connected_cb=conncb, clientid=mqtt_id)
+mqttc = network.mqtt(mqtt_id, "mqtt://"+mqtt_aws_host, connected_cb=conncb, clientid=mqtt_id)
+mqttc.start()
 utime.sleep(1)
 #mqttc.config(subscribed_cb=subscb, data_cb=datacb)
 #mqttc.subscribe(topic)
